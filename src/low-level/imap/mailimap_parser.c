@@ -2209,9 +2209,20 @@ mailimap_body_ext_1part_parse(mailstream * fd, MMAPString * buffer, struct maili
 
   r = mailimap_body_fld_md5_parse(fd, buffer, parser_ctx, &cur_token, &fld_md5,
 				  progr_rate, progr_fun);
+  //目前存在邮件fld_md5不是String类型，是("BOUNDARY" "5b39cc11_66334873_1ce6")。
+  //这里做处理，如果body_fld_md5解析失败，就让以上的也是NIL处理。
   if (r != MAILIMAP_NO_ERROR) {
-    res = r;
-    goto err;
+    char * tempStr = NULL;
+    r = mailimap_oparenth_parse(fd, buffer, parser_ctx, &cur_token);
+    if (r == MAILIMAP_NO_ERROR) {
+      r = mailimap_nstring_parse(fd, buffer, parser_ctx, &cur_token, &tempStr, NULL,progr_rate, progr_fun);
+      r = mailimap_space_parse(fd, buffer, &cur_token);
+      r = mailimap_nstring_parse(fd, buffer, parser_ctx, &cur_token, &tempStr, NULL,progr_rate, progr_fun);
+      r = mailimap_cparenth_parse(fd, buffer, parser_ctx, &cur_token);
+    } else {
+      res = r;
+      goto err;
+    }
   }
 
   r = mailimap_body_ext_1part_1_parse(fd, buffer, parser_ctx, &cur_token,
